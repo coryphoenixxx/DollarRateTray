@@ -7,14 +7,15 @@ from bs4 import BeautifulSoup
 from sqlalchemy import create_engine, Column, Integer, String, DateTime
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
-from infi.systray import SysTrayIcon
 from playsound import playsound
-
+from pystray import  Icon, MenuItem as item
+from PIL import Image
 
 engine = create_engine('sqlite:///database.db')
 Session = sessionmaker(bind=engine)
 session = Session()
 URL = "https://www.poundsterlinglive.com/data/currencies/usd-pairs/USDRUB-exchange-rate/"
+EXIT = False
 
 Base = declarative_base()
 class DollarRate(Base):
@@ -32,7 +33,7 @@ def get_rate():
     return rate
 
 
-def main():
+def main(icon):
     cur_rate = get_rate()
     dollar_rate = DollarRate(rate=cur_rate)
 
@@ -46,18 +47,31 @@ def main():
 
     ch = float(cur_rate) - float(prev_rate)
     change = (lambda x: ('+' if x > 0 else '') + str(x))(ch)
-
-    systray.update(hover_text=f"{cur_rate} ({change[:6]})")
+    icon.notify(f"{cur_rate} ({change[:6]})")
     playsound('coin.wav')
 
 
-if __name__ == "__main__":
-    systray = SysTrayIcon("dollar.ico", hover_text=f"{0.0} ({0.0})")
-    systray.start()
-    main()
+def loop(icon):
+    main(icon)
+    global EXIT
     schedule.every(2).hours.do(main)
     while True:
+        if EXIT:
+            break
         schedule.run_pending()
         sleep(1)
+
+
+def exit(icon):
+    global EXIT
+    EXIT = True
+    icon.stop()
+
+
+if __name__ == "__main__":
+    menu = (item('Update', main), item('Quit', exit))
+    icon = Icon('Icon', Image.open("dollar.ico"), 'Current Rate', menu=menu)
+    icon.visible = True
+    icon.run(setup=loop)
 
 # pyinstaller.exe -F --onefile --add-data="dollar.ico;." --add-data="coin.wav;." --add-data="database.db;." --paths="X:\src\DollarRateTray\venv\Lib\site-packages" --noconsole DollarRateTray.py
