@@ -7,7 +7,7 @@ from sqlalchemy import create_engine, Column, Integer, String, DateTime
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from playsound import playsound
-from pystray import  Icon, MenuItem as item
+from pystray import Icon, MenuItem as item
 from PIL import Image
 
 engine = create_engine('sqlite:///database.db')
@@ -32,7 +32,7 @@ def get_rate():
     return rate
 
 
-def main(icon):
+def main():
     cur_rate = get_rate()
     dollar_rate = DollarRate(rate=cur_rate)
 
@@ -51,9 +51,9 @@ def main(icon):
 
 
 def loop(icon):
-    main(icon)
+    main()
     global EXIT
-    schedule.every(2).hours.do(main)
+    schedule.every(10).seconds.do(main)
     while True:
         if EXIT:
             break
