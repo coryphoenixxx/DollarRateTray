@@ -1,6 +1,5 @@
 import requests
 import schedule
-
 from time import sleep
 from datetime import datetime
 from bs4 import BeautifulSoup
